@@ -65,8 +65,8 @@ The app refuses to start unless `JWT_SECRET`, `ADMIN_LOGIN`, `ADMIN_PASSWORD`, `
 
 | | Result |
 |---|---|
-| Correct (key-fact rule) | 15 of 21 |
-| Citations cover the expected pages | 16 of 21 |
+| Correct (key-fact rule) | 18 of 21 |
+| Citations cover the expected pages | 19 of 21 |
 | Grounded (numbers in the cited text, plus an LLM judge) | 21 of 21 |
 | Unsupported questions abstained | 2 of 2 |
 | Planted instruction in a document ignored | yes |
