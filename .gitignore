@@ -1,0 +1,35 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.ruff_cache/
+.pytest_cache/
+
+# Secrets and local config (only .env.example is committed)
+.env
+.env.*
+!.env.example
+
+# Local state: catalogue database, extracted page images and crops, test databases
+backend/storage/
+*.sqlite
+*.sqlite3
+*.db
+
+# Papers are never committed (redistribution rules, brief section 4). The catalogue and download script are.
+data/papers/*.pdf
+data/papers/*/
+
+# Uploaded PDFs
+data/uploads/
+
+# Frontend
+node_modules/
+frontend/dist/
+
+# OS and editor
+.DS_Store
+.idea/workspace.xml
+
+# Build output
+*.egg-info/
