@@ -1,0 +1,9 @@
+{
+  "min_evidence": 0.8693,
+  "separation": "separable",
+  "dev_positives": 7,
+  "dev_negatives": 6,
+  "lowest_positive": 0.954,
+  "highest_negative": 0.7846,
+  "rerank_model": "bge-reranker-v2-m3"
+}
