@@ -1,0 +1,23 @@
+{"qid": "dev-p1", "label": "positive", "question": "What is AdaMPM and how does it reduce the memory used by the optimizer?"}
+{"qid": "dev-p2", "label": "positive", "question": "Which zeroth-order methods does StructZO compare against on OPT-1.3B?"}
+{"qid": "dev-p3", "label": "positive", "question": "How does MeltKV reduce the memory used by the KV cache?"}
+{"qid": "dev-p4", "label": "positive", "question": "How does SMELL reduce memory in federated fine-tuning of long-context models?"}
+{"qid": "dev-p5", "label": "positive", "question": "What is the Less is Safer dataset meant to achieve?"}
+{"qid": "dev-p6", "label": "positive", "question": "How does the failure ratio of fine-tuning jobs change with batch size?"}
+{"qid": "dev-p7", "label": "positive", "question": "What manifold does the Riemannian zeroth-order method optimize on?"}
+{"qid": "dev-n1", "label": "negative", "question": "Who won the 2022 FIFA World Cup?"}
+{"qid": "dev-n2", "label": "negative", "question": "What is a good recipe for chocolate chip cookies?"}
+{"qid": "dev-n3", "label": "negative", "question": "How much did it cost in dollars to train GPT-4?"}
+{"qid": "dev-n4", "label": "negative", "question": "How does ENGINE perform on the ImageNet image classification benchmark?"}
+{"qid": "dev-n5", "label": "negative", "question": "How much GPU memory does MeltKV need for Llama-3-405B?"}
+{"qid": "dev-n6", "label": "negative", "question": "What are the common side effects of ibuprofen?"}
+{"qid": "dev-p8", "label": "positive", "question": "What are the main contributions of the ENGINE paper?"}
+{"qid": "dev-p9", "label": "positive", "question": "Summarise the main findings of the MeltKV paper."}
+{"qid": "dev-p10", "label": "positive", "question": "What does the fine-tuning workloads paper conclude about why jobs fail?"}
+{"qid": "dev-p11", "label": "positive", "question": "How do the papers in this collection measure memory savings?"}
+{"qid": "dev-p12", "label": "positive", "question": "Which papers in the collection deal with federated learning?"}
+{"qid": "dev-p13", "label": "positive", "question": "What are the strengths and weaknesses of zeroth-order fine-tuning according to these papers?"}
+{"qid": "dev-n7", "label": "negative", "question": "What is the carbon footprint of training ENGINE?"}
+{"qid": "dev-n8", "label": "negative", "question": "Does the Less is Safer dataset improve image generation quality?"}
+{"qid": "dev-n9", "label": "negative", "question": "How much does one GPU hour cost in the workloads study?"}
+{"qid": "dev-n10", "label": "negative", "question": "What does SMELL report on the MNIST handwritten digits dataset?"}

@@ -1,0 +1,9 @@
+{
+  "min_evidence": 0.0185,
+  "separation": "overlap: the gate is only an off-topic filter",
+  "dev_positives": 13,
+  "dev_negatives": 10,
+  "lowest_positive": 0.037,
+  "highest_negative": 0.8058,
+  "rerank_model": "bge-reranker-v2-m3"
+}
