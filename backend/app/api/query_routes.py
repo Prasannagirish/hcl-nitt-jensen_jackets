@@ -8,6 +8,8 @@ import json
 import logging
 import re
 import sqlite3
+from time import perf_counter
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
@@ -19,7 +21,8 @@ from app.api.deps import current_user, get_db
 from app.config import PROJECT_ROOT
 
 router = APIRouter()
-log = logging.getLogger("researchiq")
+# Inherit Uvicorn's server log level and handler, including INFO under `make serve`.
+log = logging.getLogger("uvicorn.error.researchiq")
 NOT_REPORTED = "NOT REPORTED"
 ASSET_RE = re.compile(r"^[A-Za-z0-9._-]+\.png$")
 ID_RE = re.compile(r"^[A-Za-z0-9._-]+$")
@@ -42,15 +45,43 @@ class CompareRequest(BaseModel):
     question: str = Field(default="", max_length=1000)
 
 
-def run_answer(question: str, snapshot: list[str], per_paper: bool) -> Answer:
-    """Call answer(); a failure in a backing service becomes a clear 503, not a stack trace."""
+def run_answer(
+    conn: sqlite3.Connection, actor_id: int, question: str, snapshot: list[str], *, per_paper: bool
+) -> Answer:
+    """Generate an answer and record its outcome in the admin audit log."""
+    action = "compare" if per_paper else "query"
+    endpoint = f"/{action}"
+    request_id = uuid4().hex
+    started = perf_counter()
+    log.info(
+        "chat_answer_started endpoint=%s request_id=%s paper_count=%d",
+        endpoint,
+        request_id,
+        len(snapshot),
+    )
     try:
-        return answer(question, snapshot, per_paper=per_paper)
-    except Exception:
-        log.exception("answer failed")
+        result = answer(question, snapshot, per_paper=per_paper)
+    except Exception as error:
+        # Provider exception messages can contain request or response content.
+        elapsed_ms = (perf_counter() - started) * 1000
+        detail = (
+            f"request_id={request_id} elapsed_ms={elapsed_ms:.1f} error_type={type(error).__name__}"
+        )
+        log.error("chat_answer_failed endpoint=%s %s", endpoint, detail)
+        db.write_audit(conn, actor_id, action, "failed", detail=detail)
         raise HTTPException(
             status_code=503, detail="The search service is unavailable. Try again later."
         ) from None
+    elapsed_ms = (perf_counter() - started) * 1000
+    detail = (
+        f"request_id={request_id} elapsed_ms={elapsed_ms:.1f} status={result.status} "
+        f"reason_code={result.reason_code!r} retrieved_count={len(result.retrieved_ids)} "
+        f"evidence_count={len(result.evidence)} claim_count={len(result.claims)} "
+        f"models={result.models!r} degraded={result.degraded!r}"
+    )
+    record_answer(conn, actor_id, action, question, result, detail)
+    log.info("chat_answer_completed endpoint=%s %s", endpoint, detail)
+    return result
 
 
 def public_answer(result: Answer) -> dict:
@@ -67,20 +98,23 @@ def public_answer(result: Answer) -> dict:
     return data
 
 
-def log_query(conn: sqlite3.Connection, user: dict, question: str, result: Answer) -> None:
-    """Record who asked, what versions were searched, the outcome and the models used."""
-    conn.execute(
-        "INSERT INTO answer_log (user_id, question, snapshot, status, model_names) "
-        "VALUES (?, ?, ?, ?, ?)",
-        (
-            user["user_id"],
-            question[:1000],
-            json.dumps(result.snapshot),
-            result.status,
-            json.dumps(result.models),
-        ),
-    )
-    conn.commit()
+def record_answer(
+    conn: sqlite3.Connection, actor_id: int, action: str, question: str, result: Answer, detail: str
+) -> None:
+    """Write the query record and its admin audit event in the same transaction."""
+    with conn:
+        conn.execute(
+            "INSERT INTO answer_log (user_id, question, snapshot, status, model_names) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (
+                actor_id,
+                question[:1000],
+                json.dumps(result.snapshot),
+                result.status,
+                json.dumps(result.models),
+            ),
+        )
+        db.write_audit(conn, actor_id, action, "ok", detail=detail)
 
 
 @router.get("/papers")
@@ -103,8 +137,7 @@ def query(
 ) -> dict:
     """Answer a question from the published papers."""
     snapshot = db.published_snapshot(conn)
-    result = run_answer(body.question, snapshot, per_paper=False)
-    log_query(conn, user, body.question, result)
+    result = run_answer(conn, user["user_id"], body.question, snapshot, per_paper=False)
     return public_answer(result)
 
 
@@ -136,8 +169,7 @@ def compare(
         raise HTTPException(status_code=404, detail="One or more papers were not found")
     snapshot = [published[d] for d in dict.fromkeys(body.document_ids)]
     question = body.question.strip() or DEFAULT_COMPARISON
-    result = run_answer(question, snapshot, per_paper=True)
-    log_query(conn, user, question, result)
+    result = run_answer(conn, user["user_id"], question, snapshot, per_paper=True)
     titles = {
         d: conn.execute("SELECT title FROM documents WHERE document_id = ?", (d,)).fetchone()[
             "title"
