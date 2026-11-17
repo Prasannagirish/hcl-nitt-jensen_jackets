@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ApiError, getJson, postForm, postJson } from '../api.js'
-import { Heading, Notice, Pill } from '../ui.jsx'
+import { Heading, Notice, PaperSearch, Pill } from '../ui.jsx'
+import { filterPapers } from '../paperSearch.js'
 
 function UploadForm({ onDone }) {
   const [message, setMessage] = useState('')
@@ -43,6 +44,8 @@ function UploadForm({ onDone }) {
 
 export default function Admin() {
   const [docs, setDocs] = useState(null)
+  const [query, setQuery] = useState('')
+  const matches = filterPapers(docs ?? [], query)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
@@ -85,13 +88,13 @@ export default function Admin() {
         <section className="card table-card" aria-label="Papers and versions">
           <div className="table-head">
             <h2>Papers and versions</h2>
-            <span className="muted small">{docs.length} {docs.length === 1 ? 'paper' : 'papers'}</span>
           </div>
+          <PaperSearch query={query} onChange={setQuery} count={matches.length} total={docs.length} />
           <table className="versions">
             <thead>
               <tr><th>Paper</th><th>Version</th><th>Status</th><th>Readers see</th><th className="actions">Action</th></tr>
             </thead>
-            {docs.map((d) => (
+            {matches.map((d) => (
               <tbody key={d.document_id}>
                 {d.versions.length === 0 && (
                   <tr>

@@ -49,7 +49,7 @@ export default function Sidebar({ login, path }) {
   }
 
   return (
-    <aside className="sidebar" aria-label="Recent chats">
+    <aside id="recent-chats" className="sidebar" aria-label="Recent chats">
       <div className="sidebar-head">
         <h2>Recent chats</h2>
         {items.length > 0 && (

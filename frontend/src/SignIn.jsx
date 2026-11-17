@@ -33,10 +33,7 @@ export default function SignIn({ onSignedIn, expired }) {
   return (
     <div className="signin">
       <div>
-        <p className="eyebrow">Research assistant</p>
-        <h1>
-          Answers from papers, <b>with the proof.</b>
-        </h1>
+        <h1>ResearchIQ</h1>
         <p className="lede">
           Ask a question across the collection and see which paper, page and figure each statement
           comes from. If the evidence is not there, it says so.

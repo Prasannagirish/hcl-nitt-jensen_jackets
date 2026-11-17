@@ -83,24 +83,24 @@ export default function ChatThread({ turns, onSend, onRetry }) {
         <div ref={endRef} />
       </div>
       <form className="chat-composer" onSubmit={(e) => { e.preventDefault(); send(text) }}>
-        <label htmlFor="chat-input" className="small muted">
-          {turns.length ? 'Ask another question' : 'Your question'}
-        </label>
         <div className="chat-row">
           <textarea
             id="chat-input"
+            aria-label={turns.length ? 'Ask another question' : 'Your question'}
+            aria-describedby="chat-hint"
+            rows={1}
             value={text}
             maxLength={LIMIT}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Type your question and press Enter"
+            placeholder="Ask about the papers…"
           />
-          <button className="primary" type="submit" disabled={busy || !text.trim()}>
-            {busy ? 'Waiting…' : 'Ask'}
+          <button className="primary chat-send" type="submit" aria-label="Send question" disabled={busy || !text.trim()}>
+            <span aria-hidden="true">↑</span>
           </button>
         </div>
-        <div className="chat-hint small muted">
-          <span>Each question is answered on its own from the papers. Earlier questions in this chat are not used as context.</span>
+        <div id="chat-hint" className="chat-hint small">
+          <span>Each question is answered independently.</span>
           <span>{text.length > LIMIT - 100 ? `${text.length} / ${LIMIT}` : 'Shift+Enter for a new line'}</span>
         </div>
       </form>

@@ -4,7 +4,7 @@ import { saveAnswer } from '../store.js'
 import { addChat, getChat } from '../chats.js'
 import { go } from '../router.js'
 import { Heading, Notice } from '../ui.jsx'
-import { AnswerView } from './Ask.jsx'
+import { AnswerView } from '../chat/AnswerView.jsx'
 
 export default function Compare({ login, chatId }) {
   const saved = chatId ? getChat(login, chatId) : null
@@ -86,25 +86,21 @@ export default function Compare({ login, chatId }) {
       </form>
       <Notice error>{error}</Notice>
       {result && (
-        <>
-          <h2>What each paper says</h2>
-          <div className="card table-card">
-          <table>
-            <thead><tr><th>Paper</th><th>Statements</th></tr></thead>
-            <tbody>
-              {result.comparison_rows.map((row) => (
-                <tr key={row.document_id}>
-                  <td><b>{row.title}</b><div className="mono">{row.document_id}</div></td>
-                  <td>
-                    {row.statements.map((s, i) => (s === 'NOT REPORTED' ? <p key={i}><span className="pill stop">NOT REPORTED</span></p> : <p key={i}>{s}</p>))}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          </div>
+        <section className="stack" aria-labelledby="compare-results">
+          <h2 id="compare-results">Comparison results</h2>
+          <ul className="comparison-papers" aria-label="Compared papers">
+            {result.comparison_rows.map((paper) => (
+              <li key={paper.document_id}>
+                <span className="comparison-paper-id">{paper.document_id}</span>
+                <span>{paper.title}</span>
+                {paper.statements.length === 1 && paper.statements[0] === 'NOT REPORTED' && (
+                  <span className="comparison-paper-id">No cited findings</span>
+                )}
+              </li>
+            ))}
+          </ul>
           <AnswerView result={result} />
-        </>
+        </section>
       )}
     </>
   )

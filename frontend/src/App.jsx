@@ -26,6 +26,7 @@ function pick(path, user) {
 
 function Shell({ user, onSignOut }) {
   const path = useRoute()
+  const [sidebarExpanded, setSidebarExpanded] = useState(true)
   const links = [
     ['/', 'Ask'],
     ['/papers', 'Papers'],
@@ -55,8 +56,24 @@ function Shell({ user, onSignOut }) {
           </button>
         </div>
       </header>
-      <div className={`layout ${showSidebar ? '' : 'solo'}`}>
-        {showSidebar && <Sidebar login={user.login} path={path} />}
+      <div className={`layout ${!showSidebar ? 'solo' : sidebarExpanded ? '' : 'sidebar-collapsed'}`}>
+        {showSidebar && (
+          <div className="sidebar-shell">
+            <button
+              type="button"
+              className="sidebar-toggle"
+              aria-expanded={sidebarExpanded}
+              aria-controls="recent-chats"
+              aria-label={sidebarExpanded ? 'Collapse recent chats' : 'Expand recent chats'}
+              onClick={() => setSidebarExpanded((expanded) => !expanded)}
+            >
+              <span aria-hidden="true" />
+            </button>
+            <div className="sidebar-viewport" inert={sidebarExpanded ? undefined : ''} aria-hidden={!sidebarExpanded}>
+              <Sidebar login={user.login} path={path} />
+            </div>
+          </div>
+        )}
         <main><ErrorBoundary key={path}>{pick(path, user)}</ErrorBoundary></main>
       </div>
       <p className="footnote">Answers are written by an AI from the papers and checked in code. Open each citation to read the source.</p>

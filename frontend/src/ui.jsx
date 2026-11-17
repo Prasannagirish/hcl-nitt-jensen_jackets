@@ -39,3 +39,22 @@ export function Notice({ error, children }) {
     </p>
   )
 }
+
+export function PaperSearch({ query, onChange, count, total }) {
+  return (
+    <div className="paper-search">
+      <label>
+        Search papers
+        <input
+          type="search"
+          placeholder="Title, author, year, or paper ID"
+          value={query}
+          onChange={(event) => onChange(event.target.value)}
+        />
+      </label>
+      <p className="muted small" role="status">
+        {total === 0 ? 'No papers available.' : count === 0 ? 'No papers match your search.' : `${count} of ${total} papers`}
+      </p>
+    </div>
+  )
+}

@@ -51,7 +51,7 @@ answer:
   max_question_chars: 1000
 
 evaluation:
-  judge_model: gpt-5.5       # a different model from the answer model; labelled as an LLM judge
+  judge_model: gpt-5.5       # separate model for the live output guard and the evaluation judge
   k_values: [3, 8]           # cut-offs for the retrieval ablation
   judge_max_images: 3
 
