@@ -202,7 +202,68 @@ def test_query_searches_only_published_versions_and_logs_the_query(api, monkeypa
     conn.close()
 
 
-def test_query_input_limits_and_service_failure(api, monkeypatch):
+@pytest.mark.parametrize(
+    "path,payload,status,reason,claim_count,evidence_count",
+    [
+        ("/query", {}, "supported", "", 1, 1),
+        (
+            "/compare",
+            {"document_ids": ["paper-003", "paper-004"]},
+            "no_answer",
+            "NO_EVIDENCE",
+            0,
+            0,
+        ),
+    ],
+)
+def test_chat_answer_logs_outcome_without_content(
+    api, monkeypatch, caplog, path, payload, status, reason, claim_count, evidence_count
+):
+    question = "A private question"
+    answer_text = "A private answer"
+
+    def fake(question, snapshot, per_paper=False):
+        if per_paper:
+            return Answer("no_answer", answer_text, reason_code="NO_EVIDENCE", snapshot=snapshot)
+        result = fake_answer(snapshot, [Claim("A private claim", ["paper-003:v1:p1:text-1"])])
+        result.answer = answer_text
+        result.models = {"answer": "test-model"}
+        result.degraded = ["answer_retry:1"]
+        return result
+
+    monkeypatch.setattr("app.api.query_routes.answer", fake)
+    with caplog.at_level("INFO"):
+        response = api.post(
+            path, headers=headers(api, USER), json={**payload, "question": question}
+        )
+
+    assert response.status_code == 200 and response.json()["status"] == status
+    started, completed = [
+        message for message in caplog.messages if message.startswith("chat_answer_")
+    ]
+    assert started.startswith(f"chat_answer_started endpoint={path}")
+    request_id = started.split("request_id=")[1].split()[0]
+    assert completed.startswith(f"chat_answer_completed endpoint={path} request_id={request_id}")
+    assert f"status={status}" in completed and f"reason_code={reason!r}" in completed
+    assert float(completed.split("elapsed_ms=")[1].split()[0]) >= 0
+    assert (
+        f"claim_count={claim_count}" in completed
+        and f"evidence_count={evidence_count}" in completed
+    )
+    if path == "/query":
+        assert "answer_retry:1" in completed and "test-model" in completed
+    for content in (question, answer_text, "A private claim", "full cited text"):
+        assert content not in caplog.text
+
+    events = api.get("/admin/audit", headers=headers(api, ADMIN)).json()
+    (event,) = [event for event in events if event["action"] == path.lstrip("/")]
+    reader_login = next(event for event in reversed(events) if event["action"] == "login")
+    assert event["actor_id"] == reader_login["actor_id"]
+    assert event["outcome"] == "ok"
+    assert event["detail"] == completed.removeprefix(f"chat_answer_completed endpoint={path} ")
+
+
+def test_query_input_limits_and_service_failure(api, monkeypatch, caplog):
     head = headers(api, USER)
     assert api.post("/query", headers=head, json={"question": ""}).status_code == 422
     assert api.post("/query", headers=head, json={"question": "x" * 1001}).status_code == 422
@@ -217,6 +278,15 @@ def test_query_input_limits_and_service_failure(api, monkeypatch):
         and "secret" not in response.text
         and "/Users" not in response.text
     )
+    assert "chat_answer_failed endpoint=/query" in caplog.text
+    assert "error_type=RuntimeError" in caplog.text
+    assert "secret internal detail" not in caplog.text
+
+    events = api.get("/admin/audit", headers=headers(api, ADMIN)).json()
+    (event,) = [event for event in events if event["action"] == "query"]
+    assert event["outcome"] == "failed"
+    assert "error_type=RuntimeError" in event["detail"]
+    assert "secret internal detail" not in event["detail"]
 
 
 def test_an_unexpected_error_returns_a_request_id_and_no_internals(api, monkeypatch):
