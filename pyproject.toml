@@ -1,0 +1,46 @@
+[project]
+name = "researchiq"
+version = "0.1.0"
+description = "ResearchIQ: cited question answering over a small set of research papers"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "fastapi>=0.163.1",
+    "openai>=3.52.0",
+    "pinecone>=10.3.0",
+    "pyjwt>=2.15.1",
+    "pymupdf>=1.24",
+    "python-multipart>=0.0.34",
+    "pyyaml>=6.0",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.2.0",
+    "ruff>=0.5",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["backend"]
+
+[tool.uv]
+package = true
+
+[tool.ruff]
+line-length = 100
+src = ["backend"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+# FastAPI's documented way of declaring dependencies and form fields is a call in a default value
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.File", "fastapi.Form", "fastapi.Header"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

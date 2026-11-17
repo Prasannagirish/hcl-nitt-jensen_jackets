@@ -1,0 +1,66 @@
+# All tunable numbers live here, not in code. Keys are added as each module needs them.
+ingest:
+  version_id: v1             # first version of every paper
+  max_chunk_chars: 1500      # a text chunk is closed once it grows past this
+  skip_sections: [references]  # section titles (lower case) not indexed
+  figure_dpi: 200            # resolution of saved figure crops
+  caption_gap_pt: 45         # how far a table may sit from its caption, in PDF points
+  max_related: 5             # related text chunks stored on each figure or table record
+
+# Model names verified by scripts/smoke_test.py on this account (see docs/build_log.md).
+# Keep them here, never in code, so a retired model is a one-line change.
+models:
+  embedding: text-embedding-3-small
+  embedding_dimension: 1536
+  vision: gpt-6.1-sol
+  vision_fallback: gpt-6.1-terra   # gpt-4o also worked in the smoke test
+  rerank: bge-reranker-v2-m3
+  # The answer-writing model is chosen in Module 2b, after a structured-output test.
+
+pinecone:
+  index_name: researchiq
+  namespace: papers
+  dense_field: embedding
+  text_field: body
+
+indexing:
+  embed_batch: 50            # texts per embedding call
+  upsert_batch: 50           # documents per Pinecone upsert call
+  max_embed_chars: 12000     # embedding input is cut here (big tables); the stored body stays whole
+  vision_max_tokens: 800
+
+retrieval:
+  branch_top_k: 15           # candidates taken from each of dense and BM25 search
+  rrf_k: 60                  # reciprocal rank fusion constant
+  rerank_pool: 20            # fused candidates sent to the reranker
+  final_top_n: 8             # evidence pieces kept after reranking
+  per_paper_quota: 3         # pieces kept per paper when searching paper by paper
+  max_related: 2             # related text chunks fetched for each figure or table kept
+  rerank_chars: 2000         # each candidate is cut to this length for the reranker
+  cache_rerank: true         # replay identical rerank requests so repeat runs are identical
+  min_evidence: null         # coarse off-topic filter; set by scripts/calibrate_gate.py
+
+answer:
+  model: gpt-6.1-sol         # structured JSON output verified; temperature 0 is NOT accepted
+  model_fallback: gpt-6.1-terra
+  cache: true                # replay identical requests from disk so evaluation runs repeat exactly
+  abstention_text: "No answer found in the knowledge base."
+  retry_count: 1             # one retry when the model output is invalid, then abstain
+  max_images: 3              # figure crops sent to the model with the evidence
+  max_output_tokens: 2000
+  max_question_chars: 1000
+
+evaluation:
+  judge_model: gpt-5.5       # a different model from the answer model; labelled as an LLM judge
+  k_values: [3, 8]           # cut-offs for the retrieval ablation
+  judge_max_images: 3
+
+database:
+  path: backend/storage/researchiq.sqlite   # catalogue, users, publish pointer, audit log
+
+auth:
+  token_hours: 8             # how long a login token stays valid
+  max_upload_mb: 25          # largest PDF an admin may upload
+
+server:
+  cors_origins: ["http://localhost:5173", "http://127.0.0.1:5173"]   # the React dev server
